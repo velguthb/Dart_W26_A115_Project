@@ -48,21 +48,25 @@ density and not pressure and is instead taking pressure from the EOS.
 ## Some Equations of State
 
 Classical Ideal Gas
+
 $$
 P_{gas} = \frac{k_{B}\rho T}{\mu m_{H}}
 $$
 
 Radiation Pressure
+
 $$
 P_{rad} = \frac{1}{3}aT^{4}
 $$
 
 Degenerate Electron Gas ($\mu_{e}\equiv \frac{2}{1+X}$)
+
 $$
 P_{e} = 1.0036\times 10^{13}\left(\frac{\rho}{\mu_{e}}\right)^{5/3}
 $$
 
 Ultra-relativistic electon gas
+
 $$
 P_{e} = 1.24^{15}\left(\frac{\rho}{\mu_{e}}\right)^{4/3}
 $$
