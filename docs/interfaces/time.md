@@ -1,4 +1,4 @@
-# Time and Structure Modules
+# Time Module
 This module is responsible for determining what time step to take and managing the total time passage
 
 ## Time
