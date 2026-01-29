@@ -15,8 +15,29 @@ def constants():
     a = 4*sigma_sb/c_s 
     R = 8.31446261815324E7 # ideal gas constant : erg/K/mol
     return mh, kB, a, R
+def init_U(mu, dM, T): 
+    """
+    Defines an initial specific internal energy 
+    
+    :param mu: Description
+    :param M: Description
+    :param T: Description
+    """
+    mh, kB, a, R = constants()
+    dM = np.asarray(dM, dtype=float)
+    T = np.asarray(T, dtype=float)
+    n = mu/dM # number of moles 
+    Cv = (3/2)*R # specific heat at constant volume for a monatomic ideal gas
+    U_init = n*Cv*T # specific internal energy in erg
+    U_init = np.asarray(U_init, dtype=float)
+    return U_init
 
-def temperature_solver(M, mu, U): 
+def update_U(U_init, dU):
+    new_U = U_init + dU
+    new_U = np.asarray(new_U, dtype=float)
+    return new_U
+
+def temperature_solver(dM, mu, U): 
     """
     Takes in mass, mean molecular weight, and specific internal energy after 
     recieving mu and U from the nuclear module. Solves for the specific heat at a constant 
@@ -27,7 +48,7 @@ def temperature_solver(M, mu, U):
     """
     mh, kB, a, R = constants()
     Cv = (3/2)*R # specific heat at constant volume for a monatomic ideal gas 
-    n = mu/M # number of moles 
+    n = mu/dM # number of moles 
     T = U/(n*Cv) # in Kelvin 
     T = np.asarray(T, dtype=float)
     return T 
