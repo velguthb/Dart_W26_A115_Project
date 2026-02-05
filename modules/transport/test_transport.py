@@ -1,3 +1,4 @@
+from turtle import lt
 import numpy as np
 print("FILE LOADED")
 
@@ -124,6 +125,27 @@ class TransportModule:
                 i += 1
         return X_new
     
+def get_diffusion_profile(structure,
+                          f_ov=0.01,
+                          alpha_sc=0.01,
+                          alpha_th=1.0,
+                          instantaneous_convection=True):
+    """
+    Public interface for other modules.
+
+    Returns:
+        D(m) array
+    """
+
+    transport = TransportModule(
+        f_ov=f_ov,
+        alpha_sc=alpha_sc,
+        alpha_th=alpha_th,
+        instantaneous_convection=instantaneous_convection,
+    )
+
+    return transport.compute_diffusion_coefficients(structure)
+
 if __name__ == "__main__":
     print("MAIN BLOCK ENTERED")
     n_shells = 100
@@ -183,70 +205,69 @@ if __name__ == "__main__":
     print("Transport step completed.")
 
 
-import matplotlib.pyplot as plt
+    import matplotlib.pyplot as plt
 
 
-D = transport.compute_diffusion_coefficients(structure)
+    D = transport.compute_diffusion_coefficients(structure)
 
-m = structure["m"]
-
-
-plt.figure()
-plt.plot(m, D)
-plt.xlabel("Mass coordinate")
-plt.ylabel("Diffusion coefficient D")
-plt.title("Total Mixing Diffusion Coefficient")
-
-species = 0  
-
-plt.figure()
-plt.plot(m, X[:, species], label="Before")
-plt.plot(m, X_new[:, species], label="After")
-plt.xlabel("Mass coordinate")
-plt.ylabel("Mass fraction")
-plt.title(f"Species {species} profile")
-plt.legend()
+    m = structure["m"]
 
 
-plt.figure()
-plt.plot(m, structure["is_convective"].astype(int))
-plt.xlabel("Mass coordinate")
-plt.ylabel("Convective = 1")
-plt.title("Convective Zones")
+    plt.figure()
+    plt.plot(m, D)
+    plt.xlabel("Mass coordinate")
+    plt.ylabel("Diffusion coefficient D")
+    plt.title("Total Mixing Diffusion Coefficient")
 
+    species = 0  
+
+    plt.figure()
+    plt.plot(m, X[:, species], label="Before")
+    plt.plot(m, X_new[:, species], label="After")
+    plt.xlabel("Mass coordinate")
+    plt.ylabel("Mass fraction")
+    plt.title(f"Species {species} profile")
+    plt.legend()
+
+
+    plt.figure()
+    plt.plot(m, structure["is_convective"].astype(int))
+    plt.xlabel("Mass coordinate")
+    plt.ylabel("Convective = 1")
+    plt.title("Convective Zones")
 # =====================================
 # Sensitivity to mixing length alpha_MLT
 # =====================================
 
-alpha_grid = np.linspace(0.8, 3.0, 10)
+    alpha_grid = np.linspace(0.8, 3.0, 10)
 
-max_changes = []
+    max_changes = []
 
-species = 0
+    species = 0
 
-for alpha in alpha_grid:
+    for alpha in alpha_grid:
 
-    l_mlt = alpha * structure["Hp"]
+        l_mlt = alpha * structure["Hp"]
 
-    v_mlt = np.zeros(n_shells)
-    superadiabatic = structure["grad_rad"] - structure["grad_ad"]
-    conv = structure["is_convective"]
+        v_mlt = np.zeros(n_shells)
+        superadiabatic = structure["grad_rad"] - structure["grad_ad"]
+        conv = structure["is_convective"]
 
-    v_mlt[conv] = 3e5 * np.sqrt(np.maximum(superadiabatic[conv], 1e-4))
+        v_mlt[conv] = 3e5 * np.sqrt(np.maximum(superadiabatic[conv], 1e-4))
 
-    structure["l_mlt"] = l_mlt
-    structure["v_mlt"] = v_mlt
+        structure["l_mlt"] = l_mlt
+        structure["v_mlt"] = v_mlt
 
-    X_new = transport.step(X, structure, dt=1e-3)
+        X_new = transport.step(X, structure, dt=1e-3)
 
-    # measure maximum absolute change
-    dX_max = np.max(np.abs(X_new[:, species] - X[:, species]))
+        # measure maximum absolute change
+        dX_max = np.max(np.abs(X_new[:, species] - X[:, species]))
 
-    max_changes.append(dX_max)
+        max_changes.append(dX_max)
 
-plt.figure()
-plt.plot(alpha_grid, max_changes)
-plt.xlabel(r"Mixing length parameter $\alpha_{\rm MLT}$")
-plt.ylabel(r"max |ΔX| (species 0)")
-plt.title("Sensitivity of Mixing Strength to α_MLT")
-plt.show()
+    plt.figure()
+    plt.plot(alpha_grid, max_changes)
+    plt.xlabel(r"Mixing length parameter $\alpha_{\rm MLT}$")
+    plt.ylabel(r"max |ΔX| (species 0)")
+    plt.title("Sensitivity of Mixing Strength to α_MLT")
+    plt.show()

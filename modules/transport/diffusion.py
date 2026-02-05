@@ -1,11 +1,13 @@
 from fipy import Grid1D, CellVariable, FaceVariable, TransientTerm, DiffusionTerm
 import numpy as np
 
+from test_transport import get_diffusion_profile
+
 # This is a stand in for your more robust diffusion function
-def Dumnmy_get_diffusion(nx):
-    D = np.ones(nx) *1e-2
-    D[int(0.3*nx):int(0.5*nx)] += 1e-2 # Very approximate effect of a convective zone
-    return D
+#def Dumnmy_get_diffusion(nx):
+   # D = np.ones(nx) *1e-2
+    #D[int(0.3*nx):int(0.5*nx)] += 1e-2 # Very approximate effect of a convective zone
+    #return D
 
 # Setting up grid / discritization. Most of this will be informed from inputs you recive from other modules
 m_min, m_max = 0, 1.0  
@@ -37,7 +39,53 @@ Y['He4'].setValue(initial_He4)
 # values. You already calculate D so you might use that as the value
 r_cell = CellVariable(mesh=mesh, value=np.linspace(0.1, 1.0, nx))
 rho_cell = CellVariable(mesh=mesh, value=np.ones(nx))
-D_cell = CellVariable(mesh=mesh, value=Dumnmy_get_diffusion(nx))
+# ----------------------------------
+# Construct structure dict for transport
+# ----------------------------------
+
+m = mesh.cellCenters[0].value
+r = r_cell.value
+
+Hp = np.linspace(5e9, 5e10, nx)
+
+grad_rad = 0.4 * np.ones(nx)
+grad_ad  = 0.2 * np.ones(nx)
+grad_mu  = 0.01 * np.ones(nx)
+
+is_convective = np.zeros(nx, dtype=bool)
+is_convective[int(0.3*nx):int(0.5*nx)] = True
+
+alpha_MLT = 1.8
+l_mlt = alpha_MLT * Hp
+
+v_mlt = np.zeros(nx)
+superadiabatic = grad_rad - grad_ad
+v_mlt[is_convective] = 3e5 * np.sqrt(
+    np.maximum(superadiabatic[is_convective], 1e-4)
+)
+
+structure = {
+    "m": m,
+    "r": r,
+    "rho": rho_cell.value,
+    "Hp": Hp,
+    "K": np.ones(nx),
+    "Cp": np.ones(nx),
+    "grad_rad": grad_rad,
+    "grad_ad": grad_ad,
+    "grad_mu": grad_mu,
+    "is_convective": is_convective,
+    "l_mlt": l_mlt,
+    "v_mlt": v_mlt,
+}
+
+# ----------------------------------
+# Call YOUR diffusion module
+# ----------------------------------
+
+D_profile = get_diffusion_profile(structure)
+
+D_cell = CellVariable(mesh=mesh, value=D_profile)
 
 A_face = (4 * np.pi * r_cell.faceValue**2 * rho_cell.faceValue)**2 * D_cell.faceValue
 
