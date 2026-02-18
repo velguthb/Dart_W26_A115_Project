@@ -140,7 +140,7 @@ def apply_diffusion(X, D, m, dt):
 
 # What to call!
 
-def transport_step(X, structure, dt,
+def transport_step(comps, structure, dt,
                    alpha_sc=0.01,
                    alpha_th=1.0):
     """
@@ -178,7 +178,11 @@ def transport_step(X, structure, dt,
     X_new : ndarray
         Updated composition after one timestep.
     """
-
+    symbols = ["H-1", "He-4", "C-12"]
+    X = np.zeros(shape=(len(comps), len(symbols)))
+    for i, comp in enumerate(comps):          
+        for j, sym in enumerate(symbols):    
+            X[i, j] = comp.composition.getMolarAbundance(sym)          
     # Compute total diffusion coefficient profile
     D = compute_diffusion_coefficients(
         structure,
@@ -188,5 +192,10 @@ def transport_step(X, structure, dt,
 
     # Apply explicit diffusion update
     X_new = apply_diffusion(X, D, structure["m"], dt)
+    
+    new_comps = comps
+    for shellID, comp in enumerate(comps):
+        for j, sym in enumerate(symbols):
+            new_comps[shellID].composition.setMolarAbundance(sym, X_new[shellID, j])
 
-    return X_new
+    return new_comps
